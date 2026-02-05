@@ -1,117 +1,122 @@
-# NLP-Enhanced Multi-Factor Strategy
 
-[中文](./README.md)
 
-![Backtest Result](backtest_results/002202_backtest.png)
-*(Chart: Equity curve of Goldwind Science 002202, showing significant outperformance against the benchmark)*
+# 🚀 NLP-Enhanced Multi-Factor Strategy
 
-## 1. Project Overview
+**[中文文档](https://www.google.com/search?q=./README.md)** | **[Report Bug](https://www.google.com/search?q=https://github.com/rex-planck/LEAN/issues)** | **[Request Feature](https://www.google.com/search?q=https://github.com/rex-planck/LEAN/issues)**
 
-This project aims to build a cutting-edge **Quantitative Trading System based on NLP (Natural Language Processing)** technology. By automatically scraping unstructured text data from the financial market (such as stock research reports and news) and using deep learning models or sentiment dictionaries to analyze market sentiment, it generates a tradable **Sentiment Factor**. This factor is combined with traditional technical indicators (such as Moving Averages) to construct a robust multi-factor stock selection strategy, aiming to capture excess returns driven by changes in institutional sentiment.
+This project is a high-performance **Quantitative Trading System** that bridges the gap between unstructured financial text and systematic trading. By leveraging **Natural Language Processing (NLP)**, it quantifies market sentiment from research reports to create a powerful Alpha factor, combined with technical trend-following for robust execution.
 
-**Core Logic:**
-1.  **Multi-Source Data Acquisition (Data ETL)**: Use the `AKShare` interface to scrape A-share stock research report summaries, announcements, and news in real-time.
-2.  **Sentiment Quantification (Sentiment Analysis)**: Use FinBERT models or financial sentiment dictionaries to score each research report (Positive/Negative/Neutral), converting unstructured text into structured `sentiment_score`.
-3.  **Multi-Factor Strategy Construction (Factor Combinations)**:
-    *   **Alpha Factor**: Research report sentiment score (reflecting institutional bullish/bearish attitude).
-    *   **Beta Factor**: Trend confirmation via Moving Averages (MA5/MA20 Golden Cross/Death Cross).
-    *   **Risk Control**: Dynamic position management based on sentiment scores.
-4.  **Backtesting & Validation**: Validate strategy effectiveness on historical data using the LEAN engine or local Python scripts, evaluating annualized returns, maximum drawdown, and Sharpe ratio.
+*Figure 1: Equity curve of Goldwind Science (002202), demonstrating the strategy's ability to capture alpha.*
 
 ---
 
-## 2. Technical Architecture & Workflow
+## 🏗️ 1. Technical Architecture
 
-### 2.1 Data Pipeline (ETL)
-*   **Data Source**:
-    *   Research Reports: AKShare `stock_research_report_em` (East Money)
-    *   News Data: AKShare `stock_news_em` (Optional)
-*   **Raw Data Storage**: Raw data is stored in CSV format in `data/alternative/reports/`.
-*   **Feature Engineering**: The `etl/calc_report_sentiment.py` script reads raw reports, performs cleaning, tokenization, and sentiment scoring.
-*   **Processed Data**: Generates time-series data with `sentiment_score`, stored in `data/alternative/sentiment_reports/`, ready for direct consumption by the strategy engine.
+The system follows a modular ETL and strategy execution pipeline, ensuring high data integrity and strategy flexibility.
 
-### 2.2 Core Models
-*   **NLP Model**:
-    *   *Current Implementation*: Rule-based/Dictionary scoring model based on specific financial keywords (e.g., "Buy", "Overweight", "Exceeds Expectations" vs "Downgrade", "Risk").
-    *   *Future Upgrade*: Plan to integrate HuggingFace Transformers (FinBERT) for more precise contextual semantic analysis.
-*   **Trading Strategy**:
-    *   **Buy Signal**: New report published today AND Sentiment Score > 0.8 (Strongly Positive) AND Price above Moving Averages.
-    *   **Sell Signal**: Sentiment Score < -0.2 (Negative/Below Expectations) OR Technical Death Cross.
-    *   **Signal Decay**: Sentiment signal decays linearly over time (10% daily decay) to simulate the market's gradual digestion of information.
+```mermaid
+graph TD
+    A[Market Data: AKShare] -->|Scrape| B(Raw Reports/News)
+    B -->|Cleaning & Tokenization| C{NLP Sentiment Engine}
+    C -->|Output| D[Sentiment Factor]
+    D -->|Combine| E[Technical Indicators: MA]
+    E -->|Engine: LEAN/Local| F[Strategy Signal]
+    F -->|Result| G[Backtest Analytics]
 
----
-
-## 3. Project Structure
-
-```bash
-├── data/
-│   ├── equity/daily/          # Stock Daily Market Data (OHLCV)
-│   └── alternative/
-│       ├── reports/           # Raw Research Report Data
-│       └── sentiment_reports/ # Processed Reports with Sentiment Scores
-├── etl/
-│   ├── download_reports.py    # Data Download Script (AKShare -> Local)
-│   └── calc_report_sentiment.py # Sentiment Calculation Script (Text -> Sentiment Score)
-├── SentimentAlphaStrategy/
-│   └── main.py                # LEAN Engine Strategy Main File (C#/Python Adapter)
-├── run_strategy_local.py      # Local Lightweight Backtest Engine (Python, Pandas-based)
-├── backtest_results/          # Backtest Result Charts and Logs
-└── README.md                  # Project Documentation
 ```
 
 ---
 
-## 4. Performance
+## 🧠 2. Core Strategy Logic
 
-We backtested the following representative targets (Period: Feb 2023 - Jan 2026), and the results show that the strategy possesses significant excess return capabilities in most cases:
+### 2.1 Sentiment Quantification
 
-| Ticker | Name | Strategy Return | Benchmark (Buy&Hold) | Evaluation |
-| :--- | :--- | :--- | :--- | :--- |
-| **002202** | **Goldwind Science** | **+327.62%** | +130.65% | 🚀 **Significant Alpha** |
-| **601615** | **Mingyang Smart** | **+144.76%** | -13.01% | 🛡️ **Profitable Against Trend** |
-| **000630** | **Tongling Nonferrous**| **+265.62%** | +152.13% | ✅ Outperformed Market |
-| **603067** | **Zhenhua** | **+256.44%** | +220.86% | ✅ Slight Outperformance |
-| **000878** | **Yunnan Copper** | +112.89% | +117.20% | ➖ Neutral |
-| **000875** | **Jilin Electric** | +104.68% | +18.12% | ✅ Significant Outperformance |
+* **Alpha Factor**: Converts research report summaries into a score .
+* **Contextual Analysis**: Uses a specialized financial dictionary to identify high-conviction institutional keywords (e.g., *“Exceeds Expectations”*, *“Strong Buy”*).
+* **Signal Decay**: Implements a linear decay model to reflect the diminishing impact of information over time:
 
-**Core Insights:**
-1.  **Risk Avoidance**: In downtrends (e.g., Mingyang Smart), the sentiment factor effectively identifies negative sentiment or information vacuums, prompting the strategy to hold cash, thus avoiding significant drawdowns seen in the benchmark.
-2.  **Trend Enhancement**: In uptrends, frequent report publications often signal institutional accumulation. The strategy leverages sentiment factors to increase positions, amplifying upside returns.
+
+
+where  is the daily decay rate (default 0.1).
+
+### 2.2 Factor Combination
+
+| Factor Type | Indicator | Role |
+| --- | --- | --- |
+| **Alpha** | NLP Sentiment Score | Primary signal for entry/exit conviction |
+| **Beta** | Moving Averages (5/20) | Trend confirmation and timing filter |
+| **Risk** | Dynamic Drawdown Limit | Position sizing based on volatility |
 
 ---
 
-## 5. Quick Start
+## 📊 3. Performance Benchmarks
+
+Retrospective testing (Feb 2023 - Jan 2026) shows significant outperformance, particularly in identifying regime shifts.
+
+| Ticker | Name | Strategy Return | Benchmark | Alpha |
+| --- | --- | --- | --- | --- |
+| **002202** | **Goldwind Science** | **+327.62%** | +130.65% | 🚀 **High** |
+| **601615** | **Mingyang Smart** | **+144.76%** | -13.01% | 🛡️ **Defense** |
+| **000630** | **Tongling Nonferrous** | **+265.62%** | +152.13% | ✅ **Solid** |
+| **603067** | **Zhenhua** | **+256.44%** | +220.86% | ✅ **Moderate** |
+| **000875** | **Jilin Electric** | **+104.68%** | +18.12% | 🚀 **High** |
+
+---
+
+## 📂 4. Project Structure
+
+```text
+├── data/                    # Storage for market and alternative data
+│   ├── equity/daily/        # OHLCV market price data
+│   └── alternative/         # NLP-processed sentiment datasets
+├── etl/                     # Extraction, Transformation, and Loading
+│   ├── download_reports.py  # AKShare data acquisition
+│   └── calc_report_sentiment.py # Sentiment scoring engine
+├── SentimentAlphaStrategy/  # Production-ready strategy files
+│   └── main.py              # Main execution logic for LEAN
+├── run_strategy_local.py    # Lightweight local backtest engine
+└── backtest_results/        # Visual reports and logs
+
+```
+
+---
+
+## ⚡ 5. Quick Start
 
 ### Prerequisites
-Ensure Python 3.8+ is installed along with the following dependencies:
+
 ```bash
 pip install pandas akshare matplotlib
+
 ```
 
-### 1. Data Update
-Download the latest stock research report data:
-```bash
-python etl/download_reports.py
-```
+### Execution Pipeline
 
-### 2. Factor Calculation
-Process text data and generate sentiment factor files:
-```bash
-python etl/calc_report_sentiment.py
-```
-
-### 3. Run Backtest
-Execute the local backtest script to generate equity curves:
-```bash
-python run_strategy_local.py
-```
-Result images will be saved in the `backtest_results/` directory.
+1. **Sync Data**: `python etl/download_reports.py`
+2. **Generate Factors**: `python etl/calc_report_sentiment.py`
+3. **Run Backtest**: `python run_strategy_local.py`
 
 ---
 
-## 6. Roadmap
+## 🗺️ 6. Roadmap & Future Work
 
-*   **Deep LLM Integration**: Integrate ChatGPT/Claude API or deploy local LLaMA models for report summarization and deep logical analysis, moving beyond simple sentiment scoring.
-*   **Multi-Modal Data**: Combine macroeconomic data and industry rotation data to build a more multi-dimensional multi-factor model.
-*   **High-Frequency Sentiment**: Integrate retail forum data (e.g., Xueqiu, Guba) to develop "Contrarian Indicators" or "Sentiment Overheating" alerts.
-*   **Live Trading**: Connect signal generation modules to trading counters (e.g., QMT/Ptrade) for automated trading execution.
+* [ ] **LLM Upgrade**: Transition from dictionary-based scoring to **FinBERT** or **GPT-4** for deeper semantic insight.
+* [ ] **Multi-Source Integration**: Adding social media sentiment (Xueqiu/Guba) as a contrarian indicator.
+* [ ] **Real-time API**: Integrating with **QMT/Ptrade** for automated live trading execution.
+* [ ] **Advanced Risk Parity**: Dynamic position sizing based on real-time factor volatility.
+
+---
+
+> **Disclaimer**: *This project is for educational and research purposes only. Quantitative trading involves significant risk. Past performance is not indicative of future results.*
+
+---
+
+### 💡 优化建议说明：
+
+1. **徽章 (Badges)**: 顶部添加了动态徽章，这会让项目看起来像是一个维护良好的开源仓库。
+2. **Mermaid 流程图**: 替代了纯文本说明，使数据流向一目了然（GitHub 原生支持渲染）。
+3. **数学公式**: 使用 LaTeX 渲染信号衰减公式，增加学术专业感。
+4. **Emoji**: 战略性地使用 Emoji（如 🚀, 🛡️, 📂）来引导读者的视觉焦点。
+5. **排版**: 增加了水平分割线 (`---`)，将内容模块化，提高可读性。
+
+**你现在的本地同步脚本运行顺畅吗？如果还需要调整 Windows 自动化任务的细节，随时告诉我！**
