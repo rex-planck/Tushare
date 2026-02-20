@@ -15,14 +15,15 @@
 
 ## 📖 项目简介
 
-本项目是一个面向 A 股市场的**多策略量化研究合集**，涵盖从宏观择时、传统多因子选股到前沿 AI 驱动的 Alpha 挖掘。项目分为五个独立模块，代表了不同的量化研究范式：
+本项目是一个面向 A 股市场的**多策略量化研究合集**，涵盖从宏观择时、传统多因子选股到前沿 AI 驱动的 Alpha 挖掘。项目分为六个独立模块，代表了不同的量化研究范式：
 
 | 模块 | 核心方法 | 策略类型 | 特点 |
 |:---:|:---:|:---:|:---|
 | 🔬 **混合因子挖掘** | GP + Transformer | 机器学习选股 | 自动发现非线性因子 |
 | 🌍 **宏观行业轮动** | HMM + 宏观流动性 | 宏观择时 | 自上而下的行业配置 |
-| 🤖 **AI 量化平台** | Qlib + LightGBM | 机器学习 Alpha | 基于 MSRA Qlib 的全链路方案 |
-|  **多因子选股** | 基本面筛选 | 价值投资 | 低估值蓝筹策略 |
+| 🤖 **AI 量化平台** | Qlib + LightGBM + GRU | 机器学习 Alpha | 基于 MSRA Qlib 的全链路方案 |
+| 📈 **LightGBM 行业轮动** | LightGBM + Walk-Forward | 行业龙头轮动 | 滚动训练 + 全市场覆盖 |
+| 📋 **多因子选股** | 基本面筛选 | 价值投资 | 低估值蓝筹策略 |
 | 🧠 **NLP 增强策略** | 情绪分析 + 趋势跟踪 | 事件驱动 | 研报情绪量化 |
 
 > 💡 **设计理念**：探索量化投资的多种可能性，从传统财务分析到现代深度学习，从结构化数据到非结构化文本，从微观个股到宏观配置。
@@ -36,7 +37,8 @@ Tushare/
 ├── 📁 Hybrid_Factor_Mining_GP/          # 模块一：混合因子挖掘系统
 │   ├── src/
 │   │   ├── run_v3_pipeline.py           # V3 主启动脚本
-│   │   └── gp_factor_mining_optimized.py # 遗传规划因子挖掘
+│   │   ├── gp_factor_mining_optimized.py # 遗传规划因子挖掘
+│   │   └── model_transformer_adversarial.py # 对抗性 Transformer
 │   └── output_v3/                       # 回测结果输出
 │
 ├── 📁 AShare_Macro_Rotation/            # 模块二：宏观行业轮动系统
@@ -47,14 +49,25 @@ Tushare/
 ├── 📁 GRU/                              # 模块三：Qlib AI 量化平台
 │   ├── 02_train_model.py                # Alpha158 + LightGBM 训练
 │   ├── 03_backtest_simulation.py        # Top-K Dropout 回测
+│   ├── 05_model_gru.py                  # GRU 深度学习模型
+│   ├── 06_factor_mining_gp.py           # GP 因子挖掘实验
+│   ├── 07_real_factor_mining.py         # 真实因子挖掘流水线
 │   └── mlruns/                          # MLflow 实验记录
 │
-├── 📁 Multi-Factor Selection Model/     # 模块四：多因子选股模型
+├── 📁 lightgbm-sector-rotation/         # 模块四：LightGBM 行业龙头轮动
+│   ├── main.py                          # 一键执行入口
+│   ├── config.py                        # 全局配置：标的池、模型参数
+│   ├── data_loader.py                   # Tushare 数据下载与前复权
+│   ├── ml_strategy.py                   # 滚动 LightGBM 训练与预测
+│   ├── backtest_engine.py               # Backtrader 回测引擎
+│   └── charts.py                        # 可视化：净值曲线、月度热力图
+│
+├── 📁 Multi-Factor Selection Model/     # 模块五：多因子选股模型
 │   └── multi_factor_stock_selection/
 │       ├── main.py                      # 蓝筹策略主入口
 │       └── strategies/                  # 策略逻辑实现
 │
-├── 📁 NLP-Enhanced Multi-Factor/        # 模块五：NLP 增强策略
+├── 📁 NLP-Enhanced Multi-Factor/        # 模块六：NLP 增强策略
 │   ├── SentimentAlphaStrategy/          # 情绪因子策略
 │   └── etl/                             # 研报数据清洗与情绪计算
 │
@@ -102,12 +115,14 @@ python strategy/batch_run.py
 
 ### 3️⃣ Qlib AI Alpha - 基于 MSRA Qlib 的量化平台
 
-**核心思想**：基于微软 Qlib 框架的高性能全链路量化投研方案。
+**核心思想**：基于微软 Qlib 框架的高性能全链路量化投研方案，支持 LightGBM 与 GRU 深度学习双引擎。
 
 #### ✨ 核心特性
 - **⚡ 高性能数据引擎**：基于二进制存储，极速读取 OHLCV 数据。
 - **📈 Alpha158 因子**：内置经典的 158 个量价因子库。
 - **🌲 LightGBM 模型**：基于梯度提升树的预测模型，Rank IC 达到 0.0536。
+- **🧠 GRU 深度学习**：引入 GRU 序列模型，捕获时序依赖特征。
+- **🧬 GP 因子挖掘**：结合遗传规划自动搜索新 Alpha 因子。
 - **📉 稳健回测**：在 2022 年熊市中实现 +8.12% 的超额收益 (Alpha)。
 
 #### 🚀 快速开始
@@ -119,7 +134,26 @@ python 03_backtest_simulation.py
 
 ---
 
-### 4️⃣ Multi-Factor Selection - 低估值蓝筹策略
+### 4️⃣ LightGBM Sector Rotation - 全市场行业龙头轮动
+
+**核心思想**：基于 LightGBM 滚动训练的全市场行业龙头轮动策略，覆盖 50+ 行业 × 100+ A 股标的。
+
+#### ✨ 核心特性
+- **📊 滚动训练 (Walk-Forward)**：400 日滚动窗口，每 20 日重新训练，避免前瞻偏差。
+- **🔧 自动特征工程**：TA-Lib 计算 25+ 技术指标 (RSI/MACD/ADX/Bollinger/OBV 等)。
+- **🎯 Top-K 持仓**：概率阈值 ≥ 0.70，Top-2 持仓 + 8% 固定止损。
+- **📈 显著超额**：总收益率 +447.63%，年化 +33.45%，夏普比率 1.756 (2020-2026)。
+- **🏗️ Backtrader 引擎**：全链路回测，包含 A 股佣金 + 印花税。
+
+#### 🚀 快速开始
+```bash
+cd lightgbm-sector-rotation
+python main.py
+```
+
+---
+
+### 5️⃣ Multi-Factor Selection - 低估值蓝筹策略
 
 **核心思想**：基于经典价值投资理念，筛选低估值优质蓝筹股。
 
@@ -136,7 +170,7 @@ python main.py
 
 ---
 
-### 5️⃣ NLP-Enhanced Strategy - 研报情绪增强
+### 6️⃣ NLP-Enhanced Strategy - 研报情绪增强
 
 **核心思想**：通过 NLP 技术量化券商研报情绪，构建独特的 Alpha 因子。
 
@@ -165,8 +199,11 @@ pip install tushare akshare
 # 核心计算库
 pip install pandas numpy matplotlib scikit-learn
 
-# 深度学习与机器学习 (Hybrid Mining & Qlib)
+# 深度学习与机器学习 (Hybrid Mining & Qlib & GRU)
 pip install torch lightgbm gplearn hmmlearn
+
+# 行业轮动策略 (LightGBM Sector Rotation)
+pip install backtrader ta-lib
 
 # Qlib 专用 (Linux/WSL 推荐)
 pip install pyqlib
